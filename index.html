@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TexteClean - Formateur de Texte Intelligent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        p.subtitle {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            background: #edf2f7;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: #3182ce;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-main { background-color: #3182ce; color: white; }
+        .btn-main:hover { background-color: #2b6cb0; }
+
+        .btn-success { background-color: #38a169; color: white; }
+        .btn-success:hover { background-color: #2f855a; }
+
+        .btn-danger { background-color: #e53e3e; color: white; }
+        .btn-danger:hover { background-color: #c53030; }
+
+        .btn-secondary { background-color: #718096; color: white; }
+        .btn-secondary:hover { background-color: #4a5568; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TexteClean ✍️</h1>
+    <p class="subtitle">Colle ton texte brut pour le nettoyer, le structurer ou l'analyser instantanément.</p>
+
+    <div class="stats-bar">
+        <span id="stat-words">0 mots</span> | 
+        <span id="stat-chars">0 caractères</span> | 
+        <span id="stat-time">0 min de lecture</span>
+    </div>
+
+    <textarea id="text-input" placeholder="Écris ou colle ton texte ici..."></textarea>
+
+    <div class="actions">
+        <button class="btn-main" onclick="transformerEnListe()">Bullet Points 📋</button>
+        <button class="btn-main" onclick="nettoyerEspaces()">Nettoyer Espaces 🧼</button>
+        <button class="btn-main" onclick="majusculesDebut()">Majuscules Début 🔠</button>
+        <button class="btn-secondary" onclick="copierTexte()">Copier 📝</button>
+        <button class="btn-danger" onclick="effacerTout()">Effacer ❌</button>
+    </div>
+</div>
+
+<script>
+    // Récupération des éléments HTML
+const textInput = document.getElementById('text-input');
+const statWords = document.getElementById('stat-words');
+const statChars = document.getElementById('stat-chars');
+const statTime = document.getElementById('stat-time');
+
+// 1. MISE À JOUR DES STATISTIQUES EN TEMPS RÉEL
+textInput.addEventListener('input', () => {
+    const texte = textInput.value;
+    
+    // Nombre de caractères
+    statChars.innerText = `${texte.length} caractères`;
+    
+    // Nombre de mots (on découpe par les espaces et on filtre les éléments vides)
+    const mots = texte.trim().split(/\s+/).filter(mot => mot.length > 0);
+    statWords.innerText = `${mots.length} mots`;
+    
+    // Temps de lecture estimé (vitesse moyenne : 200 mots par minute)
+    const tempsLecture = Math.ceil(mots.length / 200);
+    statTime.innerText = `${mots.length === 0 ? 0 : tempsLecture} min de lecture`;
+});
+
+// 2. FONCTIONS DE BASE (EFFACER ET COPIER)
+function effacerTout() {
+    textInput.value = '';
+    // On force la remise à zéro des stats
+    statWords.innerText = '0 mots';
+    statChars.innerText = '0 caractères';
+    statTime.innerText = '0 min de lecture';
+    textInput.focus();
+}
+
+function copierTexte() {
+    if (textInput.value.trim() === '') {
+        alert('Rien à copier !');
+        return;
+    }
+    navigator.clipboard.writeText(textInput.value);
+    
+    // Petit effet visuel temporaire sur le bouton de copie pour le style
+    const btn = document.querySelector('.btn-secondary');
+    const texteOrigine = btn.innerText;
+    btn.innerText = 'Copié ! ✅';
+    setTimeout(() => { btn.innerText = texteOrigine; }, 1500);
+}
+
+// 3. FONCTIONS DE TRAITEMENT INTELLIGENT
+
+function nettoyerEspaces() {
+    let texte = textInput.value;
+    if (texte.trim() === '') return;
+
+    // Supprime les espaces multiples au milieu et les lignes vides excessives
+    let texteNettoye = texte
+        .replace(/[ \t]+/g, ' ') // Remplace les doubles espaces ou tabulations par un seul espace
+        .replace(/\n\s*\n+/g, '\n\n') // Limite à deux retours à la ligne maximum d'affilée
+        .trim();
+
+    textInput.value = texteNettoye;
+    // On déclenche manuellement la mise à jour des statistiques
+    textInput.dispatchEvent(new Event('input'));
+}
+
+function majusculesDebut() {
+    let texte = textInput.value;
+    if (texte.trim() === '') return;
+
+    // Aligne une majuscule après chaque point (., !, ?) en ignorant les espaces
+    let texteCorrige = texte.replace(/(^\s*|[.!?]\s+)([a-zàâäéèêëîïôöùûüç])/g, (match, p1, p2) => {
+        return p1 + p2.toUpperCase();
+    });
+
+    textInput.value = texteCorrige;
+    textInput.dispatchEvent(new Event('input'));
+}
+
+function transformerEnListe() {
+    let texte = textInput.value;
+    if (texte.trim() === '') return;
+
+    // Sépare le texte par ligne, filtre les lignes vides, et ajoute un "• " devant
+    let lignes = texte.split('\n');
+    let listeBullet = lignes
+        .map(ligne => {
+            let l = ligne.trim();
+            // Si la ligne n'est pas vide et ne commence pas déjà par un point ou un tiret
+            if (l.length > 0 && !l.startsWith('•') && !l.startsWith('-')) {
+                return `• ${l}`;
+            }
+            return ligne; // Garde la ligne telle quelle si elle est vide ou déjà listée
+        })
+        .join('\n');
+
+    textInput.value = listeBullet;
+    textInput.dispatchEvent(new Event('input'));
+}
+</body>
+</html>
